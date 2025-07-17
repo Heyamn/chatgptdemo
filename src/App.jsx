@@ -58,7 +58,7 @@ function App() {
                   {loading ? (
                     <div className="flex justify-center items-center h-32 text-lg font-semibold text-gray-500">
                     <Loader className="animate-spin h-32 " size={18}/>
-                     <p className="p-2">Loading...</p>
+                     <p className="p-2">We are fetching data, please wait...</p>
                     </div>            
                   ) : (
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
