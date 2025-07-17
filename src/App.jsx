@@ -2,17 +2,29 @@ import { useState } from 'react'
 import './App.css'
 import Sidebar from './Sidebar'
 import { Send } from 'lucide-react';
+import { GoogleGenAI } from "@google/genai";
 
 function App() {
 
   const [inputValue, setInputValue] = useState('')
   const [submitedText, setSubmitedText] = useState('')
+  const [geminiResponse , setGeminiResponse] = useState('')
 
   const handleSubmit = () => {
     setSubmitedText(inputValue);
     setInputValue('');
-    
   }
+
+const ai = new GoogleGenAI(process.env.VITE_GEMINI_API_KEY);
+
+async function main() {
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: "Explain how AI works in a few words",
+  });
+  console.log(response.text);
+}
+
 
   return (
     <>
@@ -24,6 +36,9 @@ function App() {
           {submitedText && (
             <div>
               <h1 className='absolute top-20 right-10 text-black px-4 py-2 '>{submitedText}</h1>
+              <div>
+                <p>{geminiResponse}</p>
+              </div>
             </div>
           )}
           </div>
