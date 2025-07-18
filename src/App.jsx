@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import Sidebar from "./Sidebar";
 import { Send, Loader } from "lucide-react";
@@ -14,6 +14,20 @@ function App() {
   const [submitedText, setSubmitedText] = useState("");
   const [geminiResponse, setGeminiResponse] = useState("");
   const [loading, setLoading] = useState(false);
+  const [typedText, setTypedText] = useState("");
+
+  useEffect(()=>{
+    if (geminiResponse) {
+    setTypedText("");
+    let index = 0;
+    const interval = setInterval(() => {
+      setTypedText((prev) => prev + geminiResponse.charAt(index));
+      index++;
+      if (index >= geminiResponse.length) clearInterval(interval);
+    }, 30);
+    return () => clearInterval(interval);
+  }
+  },[geminiResponse])
 
 
   const handleSubmit = async () => {
@@ -37,7 +51,7 @@ function App() {
     
   };
 
-  const markdown = geminiResponse;
+  const markdown = typedText;
   return (
     <>
       <div className="flex">
@@ -58,7 +72,7 @@ function App() {
                   {loading ? (
                     <div className="flex justify-center items-center h-32 text-lg font-semibold text-gray-500">
                     <Loader className="animate-spin h-32 " size={18}/>
-                     <p className="p-2">We are fetching data, please wait...</p>
+                     <p className="p-2">Please wait, We are fetching data...</p>
                     </div>            
                   ) : (
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
