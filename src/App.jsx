@@ -83,7 +83,7 @@ function App() {
           messages.length === 0 ? "justify-center" : "justify-between"
         } p-8 overflow-auto`}
       >
-        <div className="relative w-full max-w-[800px] flex flex-col gap-8 mt-12">
+        <div className="relative w-full max-w-[800px] flex flex-col gap-8 mt-12 mb-40">
           {messages.map((msg, index) => (
             <div
               key={index}
@@ -107,19 +107,25 @@ function App() {
           ))}
         </div>
 
-        <div className="fixed bottom-4 left-0 right-0 flex justify-center">
-          <div className="w-full max-w-[800px] flex items-center bg-gray-100 rounded-lg p-4 shadow-md">
-            <input
+        <div
+          className={`w-full max-w-[800px] flex items-center p-4 ${
+            messages.length === 0
+              ? "mt-4"
+              : "fixed bottom-4 left-0 right-0 flex justify-center mx-auto"
+          }`}
+        >
+          <div className="w-full max-w-[800px] flex items-center bg-gray-100 rounded-lg p-2 shadow-md">
+            <textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSubmit();
                 }
               }}
-              className="flex-1 bg-gray-100 text-gray-700 focus:outline-none"
-              type="text"
+              rows={1}
+              className="flex-1 resize-none rounded-xl p-3 bg-gray-100 text-gray-700 focus:outline-none placeholder:text-gray-400 leading-6"
               placeholder="Ask anything..."
             />
             {inputValue && (
