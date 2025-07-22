@@ -11,45 +11,66 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 function App() {
   const [inputValue, setInputValue] = useState("");
-  const [submitedText, setSubmitedText] = useState("");
-  const [geminiResponse, setGeminiResponse] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [typedText, setTypedText] = useState("");
-
-  useEffect(() => {
-    if (geminiResponse) {
-      setTypedText("");
-      let index = 0;
-      const interval = setInterval(() => {
-        setTypedText((prev) => prev + geminiResponse.charAt(index));
-        index++;
-        if (index >= geminiResponse.length) clearInterval(interval);
-      }, 30);
-      return () => clearInterval(interval);
-    }
-  }, [geminiResponse]);
+  const [messages, setMessages] = useState([]);
+  const [loadingIndex, setLoadingIndex] = useState(null);
 
   const handleSubmit = async () => {
-    setSubmitedText(inputValue);
-    setGeminiResponse("");
-    setLoading(true);
+    if (!inputValue.trim()) return;
+
+    const currentQuestion = inputValue;
     setInputValue("");
+
+    const index = messages.length;
+    setMessages((prev) => [
+      ...prev,
+      { question: currentQuestion, answer: "", typedAnswer: "" },
+    ]);
+    setLoadingIndex(index);
+
     try {
       const result = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: inputValue,
+        contents: currentQuestion,
       });
-      const text = result.text;
-      setGeminiResponse(text);
+
+      const text =
+        result?.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+
+      // ✅ Update full answer once
+      setMessages((prev) => {
+        const updated = [...prev];
+        if (updated[index]) updated[index].answer = text;
+        return updated;
+      });
+
+      // ✅ Local typing animation
+      let i = 0;
+      const characters = Array.from(text);
+      const typingInterval = setInterval(() => {
+        setMessages((prev) => {
+          const updated = [...prev];
+          if (updated[index]) {
+            updated[index].typedAnswer = text.slice(0, i + 1);
+          }
+          return updated;
+        });
+        i++;
+        if (i >= characters.length) clearInterval(typingInterval);
+      }, 20);
     } catch (error) {
-      console.error("Error fetching data:", error);
-      setGeminiResponse("❌ Failed to fetch data.");
+      console.error("Error:", error);
+      setMessages((prev) => {
+        const updated = [...prev];
+        if (updated[index]) {
+          updated[index].answer = "❌ Failed to fetch data.";
+          updated[index].typedAnswer = "❌ Failed to fetch data.";
+        }
+        return updated;
+      });
     } finally {
-      setLoading(false);
+      setLoadingIndex(null);
     }
   };
-
-  const markdown = typedText;
 
   return (
     <div className="flex w-screen h-screen overflow-hidden">
@@ -57,53 +78,59 @@ function App() {
       <div className="mt-5 ml-8">
         <h2 className="text-2xl font-semibold">ChatGPT</h2>
       </div>
-      <div className={`flex-1 flex flex-col items-center ${submitedText ? 'justify-between' : 'justify-center'} p-8 overflow-auto`}>
-
-        <div className="relative w-full max-w-[800px] flex flex-col gap-8">
-          {submitedText && (
-            <div>
-              <h1 className="absolute top-0 right-0 text-black px-4 py-2 max-w-[300px] truncate whitespace-nowrap text-ellipsis border border-gray-300 shadow-md bg-white">
-                {submitedText}
-              </h1>
-              <div className="w-full mt-44 rounded-xl p-10 min-h-[200px] max-h-[500px] overflow-auto break-words border border-gray-300 shadow-md bg-white">
-                {loading ? (
-                  <div className="w-full flex justify-center items-center h-32 text-lg font-semibold text-gray-500">
-                    <Loader className="animate-spin h-32" size={18} />
-                    <p className="p-2">Please wait, fetching data...</p>
+      <div
+        className={`flex-1 flex flex-col items-center ${
+          messages.length === 0 ? "justify-center" : "justify-between"
+        } p-8 overflow-auto`}
+      >
+        <div className="relative w-full max-w-[800px] flex flex-col gap-8 mt-12">
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className="flex flex-col gap-4 border border-gray-300 shadow-md rounded-xl p-5 bg-white"
+            >
+              <div className="font-semibold text-blue-600">
+                You: {msg.question}
+              </div>
+              <div className="min-h-[100px]">
+                {loadingIndex === index && (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Loader className="animate-spin" />{" "}
+                    <span>Fetching answer...</span>
                   </div>
-                ) : (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {markdown}
-                  </ReactMarkdown>
                 )}
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {msg.typedAnswer}
+                </ReactMarkdown>
               </div>
             </div>
-          )}
+          ))}
         </div>
 
-        {/* Input Box */}
-        <div className="w-full max-w-[800px] flex items-center bg-gray-100 rounded-lg p-4 shadow-md mt-4">
-          <input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleSubmit();
-              }
-            }}
-            className="flex-1 bg-gray-100 text-gray-700 focus:outline-none"
-            type="text"
-            placeholder="Ask anything..."
-          />
-          {inputValue && (
-            <button
-              onClick={handleSubmit}
-              className="ml-3 text-gray-500 hover:text-black"
-            >
-              <Send size={18} />
-            </button>
-          )}
+        <div className="fixed bottom-4 left-0 right-0 flex justify-center">
+          <div className="w-full max-w-[800px] flex items-center bg-gray-100 rounded-lg p-4 shadow-md">
+            <input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+              className="flex-1 bg-gray-100 text-gray-700 focus:outline-none"
+              type="text"
+              placeholder="Ask anything..."
+            />
+            {inputValue && (
+              <button
+                onClick={handleSubmit}
+                className="ml-3 text-gray-500 hover:text-black"
+              >
+                <Send size={18} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
