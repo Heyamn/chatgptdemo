@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FiMenu, FiPlusSquare } from "react-icons/fi";
 
-const Sidebar = () => {
+const Sidebar = ({ onNewChat }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
@@ -24,12 +24,14 @@ const Sidebar = () => {
             key={index}
             className="flex items-center gap-4 p-3 hover:bg-gray-700 cursor-pointer transition-all"
           >
-            <span className="text-lg">{item.icon}</span>
+          <button className="flex gap-3" onClick={onNewChat}>
+            <span className="text-lg mt-0.5">{item.icon}</span>
             <span
               className={`transition-opacity duration-200 ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}
             >
               {item.name}
             </span>
+            </button>
           </div>
         ))}
       </div>

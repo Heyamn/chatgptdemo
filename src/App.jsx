@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./App.css";
 import Sidebar from "./Sidebar";
 import { Send, Loader } from "lucide-react";
@@ -36,14 +36,12 @@ function App() {
       const text =
         result?.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
 
-      // ✅ Update full answer once
       setMessages((prev) => {
         const updated = [...prev];
         if (updated[index]) updated[index].answer = text;
         return updated;
       });
 
-      // ✅ Local typing animation
       let i = 0;
       const characters = Array.from(text);
       const typingInterval = setInterval(() => {
@@ -71,10 +69,14 @@ function App() {
       setLoadingIndex(null);
     }
   };
+  const handleNewChat = () => {
+  setMessages([]);
+  setInputValue("");
+};
 
   return (
     <div className="flex w-screen h-screen overflow-hidden">
-      <Sidebar />
+      <Sidebar onNewChat={handleNewChat} />
       <div className="mt-5 ml-8">
         <h2 className="text-2xl font-semibold">ChatGPT</h2>
       </div>
